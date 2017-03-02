@@ -21,8 +21,9 @@ class PromptSpec extends WordSpec with MustMatchers {
   }
 
   def readAllInputAndVerifyLastInputIsReturned(
-      question: Question,
-      inputs: List[String]) = {
+    question: Question,
+    inputs: List[String]
+  ) = {
     var values = inputs
 
     def reader(): String = {

@@ -1,13 +1,13 @@
 package no.uio.musit
 
 import java.io.File
+import java.net.URL
 
 import scala.annotation.tailrec
 import scala.io.StdIn
+import scala.util.Try
 
 class Prompt(questions: Seq[Question]) {
-
-
 
   def ask(): Seq[Answer] = {
     implicit val readInput = () => StdIn.readLine
@@ -21,8 +21,8 @@ class Prompt(questions: Seq[Question]) {
 object Prompt {
   @tailrec
   final def foldInput(
-      state: Option[String],
-      first: Boolean = true
+    state: Option[String],
+    first: Boolean = true
   )(implicit q: Question, readInput: () => String): Answer = {
     if (first) {
       foldInput(Option(readInput()), first = false)
@@ -34,15 +34,16 @@ object Prompt {
     }
   }
 }
+
 case class Question(
-    key: String,
-    description: String,
-    validator: (String => Boolean) = Validators.NonEmpty
+  key: String,
+  description: String,
+  validator: (String => Boolean) = Validators.NonEmpty
 )
 
 case class Answer(
-    question: Question,
-    value: String
+  question: Question,
+  value: String
 )
 
 object Validators {
@@ -51,4 +52,13 @@ object Validators {
 
   val FileExist = (input: String) => new File(input).exists()
 
+  val Token = (input: String) => input.startsWith("Bearer ")
+
+  val Url = (input: String) => Try {
+    new URL(input)
+  }.isSuccess
+
+  val Number = (input: String) => Try {
+    input.toInt
+  }.isSuccess
 }
