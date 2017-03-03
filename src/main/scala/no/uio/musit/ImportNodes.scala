@@ -2,29 +2,19 @@ package no.uio.musit
 
 import java.io.File
 
+import akka.actor.{ActorRef, ActorSystem}
+import akka.event.slf4j.Logger
 import com.github.tototoshi.csv.CSVReader
 import no.uio.musit.csv.NorwegianCsvFormat
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class ImportNodes(client: WSClient)(implicit ec: ExecutionContext) {
+class ImportNodes(client: WSClient, as: ActorSystem) {
 
-  def doImport(questions: Seq[Answer]): Try[Future[Set[StorageUnit]]] = {
-    def insertUnits(
-      pId: Long,
-      su: List[StorageUnit]
-    )(implicit storageApi: StorageApi): Future[List[StorageUnit]] = {
-      Future.sequence(su.map { u =>
-        storageApi.insertStorageUnit(pId, u)
-          .flatMap(id => {
-            insertUnits(id, u.storageUnit)
-              .map(isu => u.copy(id = Some(id), storageUnit = isu))
-          })
-      })
-    }
+  var logger = Logger(classOf[ImportNodes], "musit")
 
+  def doImport(questions: Seq[Answer]) = {
     Try {
       val file = questions.find(_.question.key == "file").map(a => new File(a.value)).get
       val endpoint = questions.find(_.question.key == "endpoint").map(_.value).get
@@ -34,45 +24,54 @@ class ImportNodes(client: WSClient)(implicit ec: ExecutionContext) {
       val storageApi = new StorageApi(client, endpoint, mid, token)
 
       val reader = CSVReader.open(file)(NorwegianCsvFormat)
-      (Room(reader.all()), storageApi)
+      val lines = reader.all().map(_.filter(_.nonEmpty))
+      val (rooms, expectedInserts) = ImportNodes.fromCsvToRoom(lines)
+      (rooms, storageApi, expectedInserts)
     }.map {
-      case (rooms, storageApi) =>
+      case (rooms, storageApi, totalInserts) =>
         implicit val sa = storageApi
-        Future.sequence(rooms.map(r => insertUnits(r.id, r.storageUnit)))
-          .map(_.flatten)
+
+        logger.info(s"Starting import of $totalInserts nodes")
+        val addNodeActor = as.actorOf(AddNodeActor.apply(storageApi, totalInserts))
+
+        rooms.foreach { room =>
+          room.children.foreach { c =>
+            addNodeActor.tell(c, ActorRef.noSender)
+          }
+        }
     }
   }
-
 }
 
-object Room {
-  def apply(csv: List[List[String]]): Set[Room] = {
+object ImportNodes {
 
-    def toUnits(lines: List[List[String]]): List[StorageUnit] = {
-      lines.groupBy(_.head).mapValues(_.tail)
+  def fromCsvToRoom(csv: List[List[String]]): (Set[Room], Int) = {
+    def toUnits(
+      parent: Option[Long],
+      lines: List[List[String]]
+    ): (List[StorageUnit], Int) = {
+      val items = lines
+        .filter(_.nonEmpty)
+        .groupBy(_.head)
+        .mapValues(_.map(_.tail))
         .map {
           case (name, rest) =>
-            StorageUnit(None, name, toUnits(rest))
+            val (child, cCount) = toUnits(None, rest)
+            (StorageUnit(name, parent, child), cCount)
         }
         .toList
+      val count = items.foldLeft(items.size) { case (c, i) => c + i._2 }
+      (items.map(_._1), count)
     }
 
-    csv.groupBy(_.head)
+    val rooms = csv.groupBy(_.head)
       .mapValues(_.map(_.tail))
       .map {
-        case (room, units) => Room(room.toLong, toUnits(units))
+        case (room, units) =>
+          val (su, count) = toUnits(Some(room.toLong), units)
+          (Room("", None, su), count)
       }
       .toSet
+    (rooms.map(_._1), rooms.foldLeft(0) { case (c, i) => c + i._2 })
   }
 }
-
-case class Room(
-  id: Long,
-  storageUnit: List[StorageUnit]
-)
-
-case class StorageUnit(
-  id: Option[Long],
-  name: String,
-  storageUnit: List[StorageUnit]
-)
