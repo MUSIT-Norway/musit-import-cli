@@ -5,6 +5,7 @@ object Dependencies {
 
   val csvReader = "com.github.tototoshi" %% "scala-csv" % "1.3.4"
   val scalaTest = "org.scalatest" % "scalatest_2.11" % "3.0.1" % "test"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.2.1"
 
   object Play {
     val version = "2.5.12"
@@ -16,6 +17,7 @@ object Dependencies {
     csvReader,
     Play.playWs,
     Play.playJson,
+    logback,
     scalaTest
   )
 
