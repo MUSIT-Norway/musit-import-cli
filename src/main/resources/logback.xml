@@ -13,14 +13,14 @@
   </appender>
 
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>logs/service-storagefacility.log</file>
+    <file>logs/musit-import-cli.log</file>
     <encoder>
       <pattern>
         [%d{yyyy-MM-dd HH:mm:ss.SSS}] [import] [%level] - %logger - %message%n%xException
       </pattern>
     </encoder>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>logs/import.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <fileNamePattern>logs/musit-import-cli.%d{yyyy-MM-dd}.log</fileNamePattern>
       <!-- keep 30 days' worth of history -->
       <maxHistory>30</maxHistory>
     </rollingPolicy>
