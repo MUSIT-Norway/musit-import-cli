@@ -1,5 +1,6 @@
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import sbt.Keys._
 import sbt._
 
@@ -39,6 +40,7 @@ object CommonSettings {
 
   // scalastyle:off
   def MusitRootProject(projName: String): Project = BaseProject(projName, ".")
+        .enablePlugins(JavaAppPackaging)
 
   def BaseProject(projName: String): Project = BaseProject(projName, projName)
 
