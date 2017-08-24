@@ -24,7 +24,7 @@ class StorageApi(
           "isPartOf" -> JsNumber(id),
           "name" -> JsString(node.name)
         ))
-        val endpoint = s"$baseUrl/v1/museum/$mid/storagenodes"
+        val endpoint = s"$baseUrl/api/storagefacility/museum/$mid/storagenodes"
         wsClient.url(endpoint)
           .withHeaders("Authorization" -> token)
           .withRequestTimeout(Duration.Inf)
