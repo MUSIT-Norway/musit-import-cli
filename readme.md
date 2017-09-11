@@ -9,6 +9,27 @@ The University museums of Norway hold in trust regional and global scientific co
 MUSIT strives for greater integration between its databases. And is an open source initiative cooperating with other projects such as DINA (National History museum of Stockholm - Sweden), and Kotka (National History museum of Helsinki - Finland).
 
 
+# Usage
+
+Run 'Main' in IDEA. You will be prompted for endpoint, session token, input file path and museum id.
+
+Endpoint: Copy the endpoint from the address field in the browser and paste it after the prompt in IDEA. For example http://musit-test:8888 or https://musit-utv.uio.no. Edit the link after pasting, for example by deleting and retyping the last character, to prevent IDEA interpreting the input as a link and opening it in the browser. Press enter.
+ 
+Session token:  Open the endpoint in the browser. Open developer tools in the browser, open the Network pane. Select the storage node where we want to add new nodes. In developer tools, select the request for the storage node, find the Authorization key in Request Headers under Headers. Copy the value (starting with 'Bearer') into IDEA and press enter. 
+
+Input file path: Copy full path, including filename, to the file with nodes to be inserted. The file must be in csv format using ; as column separator.
+First column holds the id for the node where the storage nodes will be added. The id can be found in the response for the storage node in developer tools. In the example below, the id value is 5: 
+{"id":5,"nodeId":"0113...,... }. The other columns hold the names for the storage nodes, each column defining a subnode of previous column, like this:
+5;Reol 1;Seksjon 2;Hylle 1
+5;Reol 1;Seksjon 2;Hylle 2
+5;Reol 1;Seksjon 2;Hylle 3
+
+Museum id: The museum id can be found in developer tools in the Request Url after museum/. For example, museum id = 99 below:
+http://musit-test:8888/api/storagefacility/museum/99/storagenodes/011...
+
+Note that session token, id for the storage node used in the csv file and museum number must be copied for each endpoint. Create separate import files for utv, test and prod, with corresponding node id in the first column. 
+
+
 # Contribution
 
 ## Prerequisites
