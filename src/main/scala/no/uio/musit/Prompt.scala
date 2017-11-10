@@ -61,4 +61,7 @@ object Validators {
   val Number = (input: String) => Try {
     input.toInt
   }.isSuccess
+
+  val ImportType = (input: String) => List("nodes", "objects").contains(input)
+
 }
