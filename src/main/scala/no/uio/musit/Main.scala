@@ -7,7 +7,6 @@ import play.api.libs.ws.ahc.AhcWSClient
 object Main extends App {
 
   val prompt = new Prompt(Seq(
-    Question("importtype", "Type of import: nodes or objects:", Validators.ImportType),
     Question("endpoint", "Http endpoint to the environment:", Validators.Url),
     Question("token", "Session token for user. You have to copy it from browser:",
       Validators.Token),
@@ -18,7 +17,6 @@ object Main extends App {
   implicit val actorSystem = ActorSystem()
   implicit val mat = ActorMaterializer()
   val client = AhcWSClient()
-
 
   val res = new ImportNodes(client, actorSystem)
     .doImport(prompt.ask())

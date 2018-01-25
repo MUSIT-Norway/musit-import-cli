@@ -70,18 +70,5 @@ class ValidatorsSpec extends WordSpec with MustMatchers {
     }
 
   }
-  "ImportType validator" should {
-
-    "be valid import type format" in {
-      Validators.ImportType("nodes") mustBe true
-      Validators.ImportType("objects") mustBe true
-    }
-
-    "be invalid token format" in {
-      Validators.ImportType("stuff") mustBe false
-      Validators.ImportType("") mustBe false
-    }
-
-  }
 
 }
