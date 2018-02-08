@@ -72,7 +72,7 @@ class StorageApi(
       .url(endpoint)
       .withHeaders("Authorization" -> token)
       .withQueryString("searchStr" -> s"$loc")
-      .withRequestTimeout(30.second)
+      .withRequestTimeout(Duration.Inf)
     val res = req
       .get()
     res
