@@ -7,7 +7,7 @@ import play.api.libs.ws.WSClient
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 case class ObjectMoveLocation(
   locationName: String,
@@ -90,13 +90,37 @@ class MoveObjectToLocation(
   ): Map[String, String] = {
     logger.trace("getCurrentLocationByCatalogNumberMap")
     val vv = locationNameCatalogNumbers.foldLeft(List[(String, String)]()) { (z, x) =>
-      val objUuid = objectDataByCatalogNumberMap(x.catalogNumber).objectUuid
-      val curLocF = getCurrentLocationByObjectUiid(objUuid)
-      val curLocO = Await.result(curLocF, Duration.Inf)
-      val curLoc = curLocO.getOrElse("-")
-      logger.info(s"Got current location $curLoc for object ${x.catalogNumber}")
-      (x.catalogNumber, curLoc) :: z
+
+      logger.trace("getCurrentLocationByCatalogNumberMap objectDataByCatalogNumberMap")
+      val objData = Try(objectDataByCatalogNumberMap(x.catalogNumber))
+
+      val objUuid = objData match {
+        case Success(v) =>
+          Some(v.objectUuid)
+
+        case Failure(e) =>
+          logger.error(s"Unable to find object ${x.catalogNumber}")
+          None
+      }
+
+      logger.trace("getCurrentLocationByCatalogNumberMap getCurrentLocationByObjectUiid")
+      val r = objUuid match {
+        case Some(v) => {
+          val curLocF = getCurrentLocationByObjectUiid(v)
+          logger.trace("getCurrentLocationByCatalogNumberMap start await")
+          val curLocO = Await.result(curLocF, Duration.Inf)
+          val curLoc = curLocO.getOrElse("-")
+          logger.info(s"Got current location $curLoc for object ${x.catalogNumber}")
+          (x.catalogNumber, curLoc) :: z
+
+        }
+        case None =>
+          z
+      }
+      r
+
     }
+    logger.trace(s"getCurrentLocationByCatalogNumberMap: map created")
     vv.toMap
   }
 
@@ -111,23 +135,35 @@ class MoveObjectToLocation(
   ): List[ObjectMoveLocation] = {
 
     val res = locationNameCatalogNumbers.map { x =>
-      val objData = objectDataByCatalogNumberMap(x.catalogNumber)
-      val locUuid = locationUuidMap(x.locationName)
-      val curLoc = curLocMap(x.catalogNumber)
+      logger.trace(s"getLocationObjectInfo catalogNumber: ${x.catalogNumber}")
+      val maybeObjData = Try(objectDataByCatalogNumberMap(x.catalogNumber))
+      maybeObjData match {
+        case Success(v) =>
+          val objData = maybeObjData.get
 
-      val v = ObjectMoveLocation(
-        x.locationName,
-        x.catalogNumber,
-        objData.objectUuid,
-        objData.CatalogNumberFull,
-        locUuid,
-        curLoc
-      )
-      logger.info(v.toString())
-      //      println(v.toString())
-      v
+          val locUuid = locationUuidMap(x.locationName)
+
+          val curLoc = curLocMap(x.catalogNumber)
+
+          val v = ObjectMoveLocation(
+            x.locationName,
+            x.catalogNumber,
+            objData.objectUuid,
+            objData.CatalogNumberFull,
+            locUuid,
+            curLoc
+          )
+          logger.info(v.toString())
+          //      println(v.toString())
+          v
+
+        case Failure(e) =>
+          logger.error(s"Unable to find object ${x.catalogNumber}")
+          null
+      }
+
     }
-    res
+    res.filter(x => x != null)
   }
 
   def moveObjectsToLocation(
