@@ -1,0 +1,2 @@
+baseUrl;mid;collection;token;mapFilename;regnoUuidmapFilename;startLocation;endBeforeLocation
+"https://musit-utv.uio.no";4;"7352794d-4973-447b-b84e-2635cafe910a";"Bearer xxx";"data/imp_reg_mag_2col.csv";"data/export_musit_mapping_O_V_UTV.dsv";"N-B0001";"N-B0003"
