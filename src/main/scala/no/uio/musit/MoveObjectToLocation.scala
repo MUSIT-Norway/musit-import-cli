@@ -124,15 +124,15 @@ class MoveObjectToLocation(
     vv.toMap
   }
 
-  logger.info("Create location Uuid map")
-  val locationUuidMap = getLocationUuidMap(locationNameCatalogNumbers)
-
-  logger.info("Create current location map")
-  val curLocMap = getCurrentLocationByCatalogNumberMap(locationNameCatalogNumbers)
-
   def getLocationObjectInfo(
     locationNameCatalogNumbers: List[LocationNameCatalogNumber]
   ): List[ObjectMoveLocation] = {
+
+    logger.info("Create location Uuid map")
+    val locationUuidMap = getLocationUuidMap(locationNameCatalogNumbers)
+
+    logger.info("Create current location map")
+    val curLocMap = getCurrentLocationByCatalogNumberMap(locationNameCatalogNumbers)
 
     val res = locationNameCatalogNumbers.map { x =>
       logger.trace(s"getLocationObjectInfo catalogNumber: ${x.catalogNumber}")
@@ -164,6 +164,19 @@ class MoveObjectToLocation(
 
     }
     res.filter(x => x != null)
+  }
+
+  def getCatalogNumberGroups(): List[(String, List[String])] = {
+    val grp = locationNameCatalogNumbers
+      .groupBy(x => x.catalogNumber)
+    val dist = grp.map {
+      case (s, l) =>
+        (s, l.distinct)
+    }
+    val filtered = dist.filter { case (s, l) => l.length > 1 }
+
+    val res = filtered.map { case (s, l) => (s, l.map(y => y.locationName)) }.toList.sortWith((x, y) => x._1.toInt < y._1.toInt)
+    res
   }
 
   def moveObjectsToLocation(

@@ -37,6 +37,7 @@ object MainMoveObject extends App {
   val endBeforeLocation = inputParametersData(7)
 
   if (StdIn.readLine("Continue (y/n)? ") == "y") {
+
     val numLines1 = StdIn.readLine("Antall linjer: (Alle: [Enter]): ")
     val numLines = if (numLines1 != "") numLines1.toInt else -1
 
@@ -65,7 +66,6 @@ object MainMoveObject extends App {
     } else {
       processedLocationNameCatalogNumbers1
     }
-
     logger.info(s"objects processed: ${processedLocationNameCatalogNumbers.length}")
 
     val mover = new MoveObjectToLocation(
@@ -78,20 +78,37 @@ object MainMoveObject extends App {
       processedLocationNameCatalogNumbers
     )
 
-    val info = mover.getLocationObjectInfo(processedLocationNameCatalogNumbers)
+    var doStats: String = ""
+    while ({ doStats = StdIn.readLine("Calculate statistics (y/n)? "); doStats == "" }) {}
 
-    val filteredLocations = info.filter(x => x.currentLocation == "-")
-    logger.info("Objects to move")
-    filteredLocations.map(x => logger.info(x.toString()))
+    var doInfo: String = ""
+    while ({ doInfo = StdIn.readLine("Collect info, (necessary for move) (y/n)? "); doInfo == "" }) {}
 
-    Thread.sleep(1000)
     var doMove: String = ""
     while ({ doMove = StdIn.readLine("Execute move (y/n)? "); doMove == "" }) {}
 
-    val result = if (doMove == "y") {
-      mover.moveObjectsToLocation(filteredLocations)
-    } else
-      None
+    val statsResult = if (doStats == "y") {
+      val stats = mover.getCatalogNumberGroups()
+      //stats.map(x => logger.info(s"${x._1} ${x._2.toString()} "))
+      stats.map {
+        case (s, l) =>
+          logger.info(s"${s}: ${l.mkString(", ")} ")
+      }
+      Thread.sleep(1000)
+    }
+
+    val infoResult = if (doInfo == "y") {
+      val info = mover.getLocationObjectInfo(processedLocationNameCatalogNumbers)
+      val filteredLocations = info.filter(x => x.currentLocation == "-")
+      logger.info("Objects to move")
+      filteredLocations.map(x => logger.info(x.toString()))
+
+      val result = if (doMove == "y") {
+        mover.moveObjectsToLocation(filteredLocations)
+      } else
+        None
+    }
+    Thread.sleep(1000)
   }
 
   wsClient.close()
@@ -99,3 +116,4 @@ object MainMoveObject extends App {
   logger.info("Finished, actorSystem terminated")
 
 }
+
